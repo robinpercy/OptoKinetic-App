@@ -4,22 +4,13 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RectShape;
-import android.opengl.GLES20;
-import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 
 /**
  * Here's how this works...
@@ -107,6 +98,8 @@ public class MainActivity extends Activity
             private Context context;
             private long startMillis;
             private double scrollSpeedPxPerMillis = 1d/25d;
+            int stripeHeight = 30;
+            int[] stripeColors = {Color.RED, Color.WHITE, Color.BLACK};
 
             // Setter must be synchronized
             private Boolean canDraw = false;
@@ -121,27 +114,37 @@ public class MainActivity extends Activity
             }
             
             private void doDraw(Canvas c) {
+                /**
+                 * To give the illusion of perpetual scrolling, we slowly slide the striped image downwards until
+                 * all colors have scrolled into view exactly once, then we restart.  This means that the animation
+                 * needs to start (colors.length * stripeHeight) above the clipBounds.
+                 */
+
+                // Coordinates for our drawing surface
                 Rect clipBounds = c.getClipBounds();
 
-                int rectHeight = 30;
-                int[] colors = {Color.RED, Color.WHITE, Color.BLACK};
-
+                // Timing for the animation
                 Long runningMillis = System.currentTimeMillis() - startMillis;
                 Log.i(TAG,"running Millis: " + runningMillis);
 
+                // Absolute distance that stripes should move
                 Double pxToMove = Math.floor(runningMillis.doubleValue() * scrollSpeedPxPerMillis);
                 Log.i(TAG, "px to move = " + pxToMove);
 
+                // Start painting above the clipBounds, so the shifting image looks like a constant scroll
+                int offset = stripeHeight * stripeColors.length;
+                int base = -offset;
 
-                int base = -(rectHeight * colors.length);
-                base += pxToMove.intValue() % (rectHeight * colors.length);
+                // 'Scroll' by sliding the entire image down, then restart after all colors processed
+                base += pxToMove.intValue() % offset;
                 Log.i(TAG, "Base: " + base);
-                
-                for (int i=0; i*rectHeight <= clipBounds.bottom + (rectHeight*2); i++) {
-                    int newY = base + i * rectHeight;
+
+
+                for (int i=0; i * stripeHeight <= clipBounds.bottom + (stripeHeight * 3); i++) {
+                    int newY = base + (i * stripeHeight);
                     ShapeDrawable rect = new ShapeDrawable(new RectShape());
-                    rect.getPaint().setColor(colors[ i % 3 ]);
-                    rect.setBounds(0, newY, clipBounds.right, newY + rectHeight);
+                    rect.getPaint().setColor(stripeColors[ i % 3 ]);
+                    rect.setBounds(0, newY, clipBounds.right, newY + stripeHeight);
                     rect.draw(c);
                 };
             }
