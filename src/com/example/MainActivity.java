@@ -106,6 +106,7 @@ public class MainActivity extends Activity
             private SurfaceHolder surfaceHolder;
             private Context context;
             private long startMillis;
+            private double scrollSpeedPxPerMillis = 1d/25d;
 
             // Setter must be synchronized
             private Boolean canDraw = false;
@@ -125,19 +126,18 @@ public class MainActivity extends Activity
                 int rectHeight = 30;
                 int[] colors = {Color.RED, Color.WHITE, Color.BLACK};
 
-                long scrollSpeedPxPerMillis = 1L/25L; // 1px per 25millis
-
-                // Animate by one bar every 3 seconds
-                long runningMillis = System.currentTimeMillis() - startMillis;
+                Long runningMillis = System.currentTimeMillis() - startMillis;
                 Log.i(TAG,"running Millis: " + runningMillis);
-                long hundredths = runningMillis;
-                Log.i(TAG,"hundredths: " + hundredths);
-                Long wrappedHundredths = hundredths / 300;
-                Log.i(TAG,"Wrapped hundredths: " + wrappedHundredths);
-                int base = wrappedHundredths.intValue() % rectHeight;
-                Log.i(TAG, "Base: " + base);
 
-                for (int i=0; i*rectHeight <= clipBounds.bottom; i++) {
+                Double pxToMove = Math.floor(runningMillis.doubleValue() * scrollSpeedPxPerMillis);
+                Log.i(TAG, "px to move = " + pxToMove);
+
+
+                int base = -(rectHeight * colors.length);
+                base += pxToMove.intValue() % (rectHeight * colors.length);
+                Log.i(TAG, "Base: " + base);
+                
+                for (int i=0; i*rectHeight <= clipBounds.bottom + (rectHeight*2); i++) {
                     int newY = base + i * rectHeight;
                     ShapeDrawable rect = new ShapeDrawable(new RectShape());
                     rect.getPaint().setColor(colors[ i % 3 ]);
